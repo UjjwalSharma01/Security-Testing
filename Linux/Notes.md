@@ -1,147 +1,226 @@
+# Linux Notes
+
+> Personal revision notes — learning Linux as a starting point for ethical hacking.
+
+---
+
 ## Terminal
 
-To increase the font we need to press `ctrl + shift+ (+)`, and to decrease the font we need to press `ctrl+-`
+### Font size
+
+- Increase → `ctrl + shift + (+)`
+- Decrease → `ctrl + -`
 
 ### Clearing the terminal
 
-use the `clear` command and we can also use `ctrl+l` key
+- Use the `clear` command
+- Or press `ctrl + l`
 
-### To end the currently running process
-use the ctrl + c key
+### Ending or pausing a process
 
-to pause a process or task, use ctrl + z key
+- End the currently running process → `ctrl + c`
+- Pause a process or task → `ctrl + z`
+  - Resume it with `fg` (foreground) or `bg` (background)
 
-- Autocomplete - use the tab key and if u want more references or matching commands, u can press the double tab key and it will show all the potential meanings of your current command
+### Autocomplete
 
-- ### How to close the terminal
+- Press `tab` to autocomplete
+- Press `tab` twice (double tab) to see all the possible matches for what you've typed so far
 
-  we can use ctrl + shift + t
+### Closing the terminal
 
+- Close the current tab → `ctrl + shift + w`
+- Close the whole window → `ctrl + shift + q`
+- Or type `exit` / press `ctrl + d`
+- ⚠️ `ctrl + shift + t` **opens a new tab** — don't mix it up with closing
 
-  ## File Management and Manipulation
+---
 
-  to get the current directory we need to use pwd  - print working directing or i call it present working directory
-  to list the directories and files present in the current directory we can use the `ls` command
+## File Management and Manipulation
 
-  ### Other variations of ls command
+### Current directory — `pwd`
 
-  example - `ls -l` it will list the contents present in the current directory in the form of list or a table for easy readability
+- `pwd` → **p**rint **w**orking **d**irectory (I call it *present working directory*)
+- Shows the directory you are currently in
 
-  to get the hidden files as well we can use the all option with this and can use `ls -a ` and we can use it with the list option as well like `ls -al`
+### Listing — `ls`
 
+- `ls` → lists the directories and files present in the current directory
 
-  to find the list the files in the more readale format for the users -  we can use the `ls-lh`, readable in the sense that the file size is given in KBs rather than the bytes in the previous command like `ls -l` and the h stands for human readable
+#### Other variations of `ls`
 
+- `ls -l` → long format; lists the contents as a list/table for easy readability
+- `ls -a` → shows hidden files as well (`a` = all; hidden files start with `.`)
+- `ls -al` → both combined (long format + hidden files)
+- `ls -lh` → **h**uman readable; file sizes in KB/MB instead of bytes (unlike `ls -l`)
+- `ls -lR Desktop/` → shows the subdirectories as well
+  - `R` = **recursive**
+  - mention the folder you want to go recursive in (here `Desktop/`)
 
-  if we want to show the subdirectories as well we can use the command - `ls -lR Desktop/` R stands for recursive here and here we also need to mention the folder where we wanna go recursive form
+### Changing directory — `cd`
 
-   change directory - cd command
-  if you use `cd ..` we can go to the parent directory
+- `cd ..` → go to the **parent** directory
+- `cd <directory name>` → go to a specific directory
+- `cd ~` → go back to the **home** directory
+- Use `/` to specify a directory that is not directly available in the current directory
 
-  to go to some specific directory - we can use the command like `cd <directory name`
+> ❓ **My question:** can we only move *down* the hierarchy, or anywhere in the file system? How does Linux process this?
+>
+> 💡 **Answer:** anywhere. Linux reads the path one folder at a time, and where it *starts* depends on the path:
+>
+> - **Absolute path** → starts with `/` (root), works from anywhere → `cd /var/log`
+> - **Relative path** → no leading `/`, starts from the current directory → `cd Desktop/projects`
+> - `.` = current directory, `..` = parent → `cd ../..` goes up two levels
 
-  and we can also use `/` to specify a directory which is not directly available in the current directory - question is can we just move down the heirarchy or anywhere in the file system, how it usually works and how linux processes this thing
+### Info about a command — `whatis`
 
+- `whatis <command>` → quick one-line description of a command or tool
+- e.g. `whatis ls`
 
+---
 
-  to navigate back to home directory we can use the `cd ~` command
+## File Commands
 
-  > to find the information about particular command or tool we we can use the `whatis` command 
+1. **Create a file** → `touch`
+   - Creates an empty file → `touch test.txt`
 
+2. **`echo`** → prints some text in the command line
+   - The data can also be redirected into a file
 
+3. **Redirecting** the data to a particular file or command → used majorly with `echo`
+   - `echo "Ujjwal Sharma" > test.txt`
+   - `>` overwrites the file, `>>` appends to it
 
-  ## File Commands
+4. **Display** the content of a file → `cat`
+   - Used to print and concatenate the contents of a file → `cat test.txt`
 
-  1. How to create a file - `touch` command, example `touch test.txt`
-  2. echo command - to print some text in the command line but we can direct this data into some file
-  3. redirecting the data to a particular file or the command - used majorly with the eco command, example - `echo "Ujjwal Sharma">test.txt`
-  4. to display the content of the file - we can use the `cat` command, it is used to print and concatenate the contents of a file
-  5. we can use the cat command to redirect the contents of the file __if the file doesnt exists it will create it and we pss a relative path with cat command__ - example `cat etc/passwrd > pass.txt`
+5. **Redirect** the contents of a file with `cat`
+   - If the destination file doesn't exist, it will be created
+   - Pass the path of the file (relative or absolute) → `cat /etc/passwd > pass.txt`
 
+---
 
-  # File and Directory Permissions and ownership
-There are 2 ways to handle permissions in linux
+## File and Directory Permissions
+
+### The basics
+
+**2 ways to handle permissions in Linux**
+
 1. Symbolic mode format
-2. Octal or binary mode format
+2. Octal (or binary) mode format
 
-you can apply 3 type of permissions you can apply in linux
-1. r - > read
-2. w -> write
-3. x-> execute
+**3 types of permissions**
 
+- `r` → read
+- `w` → write
+- `x` → execute
 
-how you can see them in the terminal 
+### Reading permissions in the terminal
 
-you have permissions divided in the block of 3 
+Permissions are divided into blocks of 3, e.g. `-rw-r--r--` → read it as `-` `rw-` `r--` `r--`
 
-like `-rw-r--r--` so you will read it `-rw -r-- r--` the character represents the file type if its a file it will be blank and if its a directory it will start like `drw`
-   
-Column wise meaning
-1. for owner
-2. Group permissions
-3. For all other users in the system
+```
+-   rw-   r--   r--
+|    |     |     |
+|    |     |     +-- others  (all other users in the system)
+|    |     +-------- group
+|    +-------------- owner
++------------------- file type  (- = file, d = directory)
+```
 
+- A directory starts with `d` → e.g. `drwxr-xr-x`
 
-## CHanging the permissions
-`chmod` command is used to change the file mode bits or the permissions of a file
+### Changing permissions — `chmod`
 
-symbolic way to handle this
+- `chmod` → changes the file mode bits (the permissions) of a file
 
-`chmod u-rwx file.text` __u__ here stands for the current user, to apply permissions to all users and users we can use `chmod go=rwx test.sh`,with this command u stands for current user, g stands for group, o stands for others and a stands for all, and if you dont wanna write all the permissions with euquals to again and again you can use the `+` and `-` symbol to add or remove the permissions like `chmod go-wx` this remove the write and execute permissions from group and others
+#### Symbolic way
 
-octal way of handleng permissions
+- Format → `chmod <who><operator><permissions> <file>`
 
-read write and execute permissions are not denoted with binary formats like read is denoted by 4, write by 2, and execute by 1
+**Who**
 
+- `u` → user (the current user)
+- `g` → group
+- `o` → others
+- `a` → all
 
-if i want owner grp and others to have only read permissions i can do, `chmod 444 file.txt` and if you wanna give extra permissions you will just add these values tgether and give the respective number for each entity
+**Operator**
 
-> to do anything recursively just use the  -R flag
+- `=` → set exactly these permissions
+- `+` → add permissions
+- `-` → remove permissions
 
+**Examples**
 
-# File and Directory Ownership
+- `chmod u-rwx file.txt` → remove all permissions from the user
+- `chmod go=rwx test.sh` → set `rwx` for group and others
+- `chmod go-wx test.sh` → remove write and execute from group and others
+- `chmod +x test.sh` → make a file executable
 
-> we will use `chown` command
+> 💡 Don't want to write all the permissions with `=` again and again? Use `+` and `-` to add or remove only what you need.
 
-example `chown root test.sh`
+#### Octal way
 
+- Permissions are denoted by numbers:
+  - `r` = **4**
+  - `w` = **2**
+  - `x` = **1**
+- For extra permissions, **add the values together** → `rw-` = 4+2 = **6**, `rwx` = 4+2+1 = **7**
+- Give one number for each entity → **owner | group | others**
 
-for changing the groups we use the command known as `chgrp` command
+**Examples**
 
+- `chmod 444 file.txt` → owner, group and others get **only read**
+- `chmod 644 file.txt` → `rw-r--r--`
+- `chmod 755 file.sh` → `rwxr-xr-x`
 
-example `chgrp root test.sh`
+> 💡 To do anything recursively, just use the `-R` flag → e.g. `chmod -R 755 folder/`
 
+---
 
-# Grep and Piping
+## File and Directory Ownership
 
-grep prints the lines matching a particular pattern, it also helps you to find the strings and patterns in the file if you are searching for it
+- `chown` → change the **owner** of a file
+  - `chown root test.sh`
+- `chgrp` → change the **group** of a file
+  - `chgrp root test.sh`
 
-> if you are unsure about a tool you can use `man tool/command` name to check how to use it
+> 💡 These usually need `sudo`. To change owner and group together → `chown user:group file`
 
+---
 
-usage -> `grep "dynamic" /etc/` at the end we specify the location
+## Grep and Piping
 
-how to remove the case sensitive search 
+### `grep`
 
-use the `-i` flag -> usage `grep -i "dynamic" /etc/`
+- Prints the lines matching a particular pattern
+- Also helps you find strings and patterns in a file
+- Usage → `grep -r "dynamic" /etc/`
+  - the location is specified at the end
+  - `-r` → recursive; needed when the location is a directory
+- Case-insensitive search → use the `-i` flag
+  - `grep -ri "dynamic" /etc/`
 
+> 💡 Unsure about a tool? Use `man <command>` to check how to use it (full manual — `whatis` is just a one-liner). Press `q` to exit.
 
-now we can also pass some data to it and then give it some operations for example -> `cat /etc/pass | grep "Ujjwal" `
+### Piping
 
+- We can also pass some data to a command and then perform operations on it
+- Example → `cat /etc/passwd | grep "Ujjwal"`
+  - `cat` prints the file → the output is piped into `grep` → only the matching lines are shown
 
-| → command → command
-> → command → file
+**Symbols to remember**
 
-# Locate - Finding whiles
+- `|` → command → command
+- `>` → command → file
+- `>>` → command → file (append)
 
-it helps us to find the files by name
+---
 
-use of it  ``
+## Locate — Finding Files
 
+- `locate` → helps us find files **by name**
+- Usage → `locate <filename>` → e.g. `locate test.txt`
 
-
-
-
-
-
-
+> 💡 `locate` searches a pre-built database, so brand-new files may not show up until you refresh it → `sudo updatedb`
