@@ -57,3 +57,91 @@ to pause a process or task, use ctrl + z key
   3. redirecting the data to a particular file or the command - used majorly with the eco command, example - `echo "Ujjwal Sharma">test.txt`
   4. to display the content of the file - we can use the `cat` command, it is used to print and concatenate the contents of a file
   5. we can use the cat command to redirect the contents of the file __if the file doesnt exists it will create it and we pss a relative path with cat command__ - example `cat etc/passwrd > pass.txt`
+
+
+  # File and Directory Permissions and ownership
+There are 2 ways to handle permissions in linux
+1. Symbolic mode format
+2. Octal or binary mode format
+
+you can apply 3 type of permissions you can apply in linux
+1. r - > read
+2. w -> write
+3. x-> execute
+
+
+how you can see them in the terminal 
+
+you have permissions divided in the block of 3 
+
+like `-rw-r--r--` so you will read it `-rw -r-- r--` the character represents the file type if its a file it will be blank and if its a directory it will start like `drw`
+   
+Column wise meaning
+1. for owner
+2. Group permissions
+3. For all other users in the system
+
+
+## CHanging the permissions
+`chmod` command is used to change the file mode bits or the permissions of a file
+
+symbolic way to handle this
+
+`chmod u-rwx file.text` __u__ here stands for the current user, to apply permissions to all users and users we can use `chmod go=rwx test.sh`,with this command u stands for current user, g stands for group, o stands for others and a stands for all, and if you dont wanna write all the permissions with euquals to again and again you can use the `+` and `-` symbol to add or remove the permissions like `chmod go-wx` this remove the write and execute permissions from group and others
+
+octal way of handleng permissions
+
+read write and execute permissions are not denoted with binary formats like read is denoted by 4, write by 2, and execute by 1
+
+
+if i want owner grp and others to have only read permissions i can do, `chmod 444 file.txt` and if you wanna give extra permissions you will just add these values tgether and give the respective number for each entity
+
+> to do anything recursively just use the  -R flag
+
+
+# File and Directory Ownership
+
+> we will use `chown` command
+
+example `chown root test.sh`
+
+
+for changing the groups we use the command known as `chgrp` command
+
+
+example `chgrp root test.sh`
+
+
+# Grep and Piping
+
+grep prints the lines matching a particular pattern, it also helps you to find the strings and patterns in the file if you are searching for it
+
+> if you are unsure about a tool you can use `man tool/command` name to check how to use it
+
+
+usage -> `grep "dynamic" /etc/` at the end we specify the location
+
+how to remove the case sensitive search 
+
+use the `-i` flag -> usage `grep -i "dynamic" /etc/`
+
+
+now we can also pass some data to it and then give it some operations for example -> `cat /etc/pass | grep "Ujjwal" `
+
+
+| → command → command
+> → command → file
+
+# Locate - Finding whiles
+
+it helps us to find the files by name
+
+use of it  ``
+
+
+
+
+
+
+
+
