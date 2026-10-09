@@ -624,3 +624,371 @@ $ locate newfile.txt          <- now it shows up
 
 - Quote your wildcards → `locate "*.txt"`
 - A stale database is the number one reason a file isn't found
+
+
+## Enumerating Distribution & Kernel Information
+
+- Usually one of the **first steps** once you have a shell on a machine
+- Goal → find the exact OS + kernel version, to look for matching exploits
+- The **kernel version** is the key detail for privilege escalation (old kernels → known CVEs)
+
+---
+
+### Kernel info — `uname`
+
+- `uname -a` → **all** info at once (the go-to command)
+
+```
+$ uname -a
+Linux kali 6.1.0-kali7-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.0-13 (2023-07-12) x86_64 GNU/Linux
+```
+
+| Flag | Meaning |
+|---|---|
+| `-a` | all information |
+| `-r` | kernel release version (the important one) |
+| `-m` | architecture (e.g. `x86_64`) |
+| `-n` | hostname |
+| `-v` | kernel build date/version |
+| `-s` | kernel name |
+
+> 💡 `uname -r` alone is usually enough to start exploit-hunting
+
+---
+
+### Distro info — the kernel version alone doesn't tell you this
+
+- `cat /etc/os-release` → the **modern standard**, works on almost every distro
+  - `PRETTY_NAME` line is the quickest to read
+- `lsb_release -a` → another common way, but not installed everywhere
+- `cat /etc/issue` → the pre-login banner, less reliable (can be outdated/customized)
+- Older/specific files:
+  - `/etc/debian_version` → Debian/Ubuntu
+  - `/etc/redhat-release` → RedHat/CentOS/Fedora
+  - `cat /etc/*-release` → wildcard, catches whichever exists
+
+---
+
+### `/proc/version` — live kernel info
+
+```
+$ cat /proc/version
+Linux version 6.1.0-kali7-amd64 (devel@kali.org) (gcc-12) #1 SMP PREEMPT_DYNAMIC ...
+```
+
+- `/proc` is a **virtual** filesystem, generated live by the kernel (not real files on disk)
+- Similar to `uname -a`, but also shows the **compiler** used to build the kernel
+
+---
+
+### `hostnamectl` — one-shot summary
+
+```
+$ hostnamectl
+  Operating System: Kali GNU/Linux Rolling
+            Kernel: Linux 6.1.0-kali7-amd64
+      Architecture: x86-64
+    Virtualization: kvm
+```
+
+- Gives OS + kernel + architecture + whether you're in a **VM**, all at once
+
+---
+
+### Piping it together (ties back to grep notes)
+
+- `cat /etc/os-release | grep "PRETTY_NAME"` → just the readable name
+- `uname -a | grep -o "x86_64\|i686"` → quick architecture check
+
+---
+
+### Why it matters for privilege escalation
+
+- Once you know the exact kernel version → search `searchsploit <version>` or check Exploit-DB
+- e.g. an old Ubuntu `4.4.0` kernel has known privesc exploits, a patched `6.x` kernel usually doesn't
+
+> ⚠️ Always confirm the **exact** version — exploits are version-specific, wrong one can crash the service
+
+---
+
+### Cheat summary
+
+| Goal | Command |
+|---|---|
+| Kernel version (quick) | `uname -r` |
+| Kernel + arch + hostname | `uname -a` |
+| Distro name (modern) | `cat /etc/os-release` |
+| Distro name (classic) | `lsb_release -a` |
+| Pre-login banner | `cat /etc/issue` |
+| Live kernel + compiler info | `cat /proc/version` |
+| Full system summary | `hostnamectl` |
+
+
+
+## `find` — and OverTheWire Bandit
+
+- `find` searches the file system **live**, right now (unlike `locate`, which searches a database)
+- Slower, but always accurate — can search by **size, permission, time, owner, type**, and more
+- This is exactly why OverTheWire's Bandit forces you to learn it
+
+---
+
+### Basic syntax
+
+```
+find <where to look> <what to look for> <what to do with it>
+```
+
+- `find /home -name "test.txt"` → search starting at `/home`
+- `find .` → search starting at the current directory
+
+---
+
+### Searching by name
+
+| Flag | Meaning |
+|---|---|
+| `-name` | exact match, case-sensitive |
+| `-iname` | same, case-**insensitive** |
+
+```
+find / -iname "*.txt"
+```
+
+> 💡 Quote wildcards, same rule as `locate`
+
+---
+
+### Searching by type
+
+- `-type f` → regular files only
+- `-type d` → directories only
+- `-type l` → symbolic links only
+
+```
+find /home -type d
+```
+
+---
+
+### Searching by size
+
+The **most-used flag** in Bandit's early levels — many tasks ask you to find "the only file of this size."
+
+```
+find / -size 1033c
+```
+
+| Suffix | Unit |
+|---|---|
+| `c` | bytes |
+| `k` | KB |
+| `M` | MB |
+| `G` | GB |
+
+Ranges:
+- `+1033c` → greater than 1033 bytes
+- `-1033c` → less than 1033 bytes
+- `1033c` → exactly 1033 bytes
+
+---
+
+### Searching by permissions
+
+```
+find / -perm 644
+```
+
+- `-perm 644` → matches **exactly** that permission set
+- `-perm -644` → matches files with **at least** those permissions
+
+> 💡 Bandit often says *"find the file readable by you but not executable"* → this is the flag for that
+
+---
+
+### Searching by ownership
+
+```
+find / -user root
+find / -group root
+```
+
+---
+
+### Searching by modification time
+
+- `-mtime -1` → modified in the last 1 day
+- `-mtime +7` → modified more than 7 days ago
+- `-mtime 5` → modified **exactly** 5 days ago
+
+```bash
+# Find files modified in the last 2 days
+find . -mtime -2
+
+# Find files older than 30 days (good for cleanup)
+find . -mtime +30
+
+# Find files modified exactly 5 days ago
+find . -mtime 5
+```
+
+> 💡 Same `+` / `-` / exact logic as `-size` → `+` is "more than", `-` is "less than", plain number is "exactly"
+
+---
+
+### Combining conditions (AND by default)
+
+```
+find / -type f -size 1033c 2>/dev/null
+```
+
+Reads as: *"regular file, exactly 1033 bytes, hide permission errors."*
+
+> ⚠️ `2>/dev/null` is essential on real systems and in Bandit — without it, your terminal fills with `Permission denied` noise
+
+---
+
+### Running a command on results — `-exec`
+
+```
+find / -name "*.txt" -exec cat {} \;
+```
+
+- `{}` → placeholder for each file found
+- `\;` → ends the command (backslash escapes the semicolon from the shell)
+- Runs `cat` on **every** matching file, one by one
+
+---
+
+### How this maps to Bandit
+
+Bandit = beginner wargame, SSH access + one task per level, usually forcing exactly one new command. `find` shows up heavily around **Level 4–7**.
+
+**Find the only human-readable file among decoys:**
+```
+find . -type f -exec file {} \; | grep "ASCII text"
+```
+*(`file` shows type of each file → piped into `grep` to keep only text files)*
+
+**Find a file by exact size + owner + group:**
+```
+find / -size 1033c -user bandit7 -group bandit6 2>/dev/null
+```
+*(all 3 conditions AND together → narrows millions of files to one)*
+
+**Find recently modified files (cron-job levels):**
+```
+find / -mmin -5 2>/dev/null
+```
+
+> 💡 **General Bandit pattern:** `find / <conditions> 2>/dev/null` — always hide errors, since you don't have root
+
+---
+
+### `find` vs `locate` (recap)
+
+| | `locate` | `find` |
+|---|---|---|
+| Speed | fast (database) | slower (live scan) |
+| Freshness | can be stale | always accurate |
+| Searches by | name only | name, size, time, permission, owner, type |
+
+Bandit specifically wants `find` — its challenges test conditions `locate` simply can't check.
+
+---
+
+### Cheat summary
+
+| Goal | Command |
+|---|---|
+| By name | `find / -iname "file.txt"` |
+| By type | `find / -type f` |
+| By size | `find / -size 50c` |
+| By owner | `find / -user bandit7` |
+| By permission | `find / -perm 644` |
+| By time | `find / -mtime -1` |
+| Run a command on results | `find / -name "*.txt" -exec cat {} \;` |
+| Hide errors (always do this) | add `2>/dev/null` |
+
+
+## Output Redirection — `2>/dev/null`
+
+> ⭐ **Why this matters:** almost every real-world or Bandit-style `find` / `grep` command on a shared system throws `Permission denied` errors. Without this, your terminal floods and hides the actual result you were looking for. This is one of the most-used pieces of syntax in enumeration.
+
+---
+
+### 1. Every command has 2 separate output channels
+
+A command doesn't produce one stream of output — it produces **two**, kept completely separate by Linux (even though your terminal displays both mixed together):
+
+| Channel | Name | Number | Carries |
+|---|---|---|---|
+| stdout | standard output | `1` | normal, successful output |
+| stderr | standard error | `2` | error messages |
+
+> 💡 They *look* like one stream on screen, but to Linux they are two different pipes — that's exactly why you can throw away errors without touching the real results.
+
+---
+
+### 2. Breaking down `2>/dev/null`
+
+| Part | Meaning |
+|---|---|
+| `2` | select channel **2** → stderr (errors) |
+| `>` | redirect — send this output elsewhere instead of printing it |
+| `/dev/null` | a special "trash can" file that discards anything sent to it |
+
+- Plain `>` with no number defaults to channel `1` (stdout) → so `command > file.txt` still shows errors on screen, since it never touched channel 2
+- `/dev/null` isn't a real file with disk space — it's a device file that discards data instantly, nothing is stored
+
+**Put together:** *"Take the errors (channel 2), and throw them into the void — show me only the real results."*
+
+---
+
+### 3. Example
+
+```bash
+find / -iname "*.conf" 2>/dev/null
+```
+
+Shows only the matching files, no `Permission denied` noise.
+
+---
+
+### 4. See the two channels separately (optional, to prove it to yourself)
+
+```bash
+find / -iname "*.conf" > results.txt 2>errors.txt
+```
+
+- `results.txt` → real matches (stdout)
+- `errors.txt` → permission errors (stderr)
+
+---
+
+### 5. Bonus — merging both streams
+
+```bash
+find / -iname "*.conf" 2>&1
+```
+
+- `2>&1` → send channel 2 to wherever channel 1 is currently going
+- Useful when you want errors **and** output captured together:
+
+```bash
+find / -iname "*.conf" > all_output.txt 2>&1
+```
+
+---
+
+### Cheat summary
+
+| Syntax | Meaning |
+|---|---|
+| `1` | stdout channel (normal output) |
+| `2` | stderr channel (errors) |
+| `>` | redirect to a file instead of screen |
+| `2>/dev/null` | discard error messages only |
+| `2>&1` | merge errors into the same place as normal output |
+
+> ⭐ **Rule of thumb:** append `2>/dev/null` to any `find`, or similar recursive search run without root — it's standard practice, not optional.
