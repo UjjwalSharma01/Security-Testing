@@ -72,6 +72,27 @@
 > - **Relative path** → no leading `/`, starts from the current directory → `cd Desktop/projects`
 > - `.` = current directory, `..` = parent → `cd ../..` goes up two levels
 
+
+### How `cd` resolves a path
+
+- `cd` does **not** search the file system, it resolves the path one component at a time
+  - Starts from `/` (absolute path) or the current directory (relative path)
+  - e.g. `cd Desktop/projects/hacking` → 3 lookups only, whether the system has 100 directories or millions
+- Speed depends on **how many components are in the path**, not on how many directories exist
+- `cd hacking` fails if `hacking` isn't directly inside the current directory → `No such file or directory`
+- To actually *search* the file system, use `find` or `locate`
+
+**Why it's fast**
+
+- A directory is a special file that maps names to inodes
+- Modern filesystems (ext4, XFS) store entries in a hash/tree structure, so lookups are quick
+- Recent lookups are kept in memory (**dentry cache**)
+
+**Limits**
+
+- Full path → max **4096** characters
+- Single file/folder name → max **255** characters
+- Symbolic links → stops after about **40** hops (`Too many levels of symbolic links`)
 ### Info about a command — `whatis`
 
 - `whatis <command>` → quick one-line description of a command or tool
@@ -193,7 +214,7 @@ Permissions are divided into blocks of 3, e.g. `-rw-r--r--` → read it as `-` `
 ## Grep and Piping
 
 ### `grep`
-
+It is used for both the verbatim first is to Find the patterns like how really you will find the patterns is if you will give it a file It will cheque the contents of the file and print the line that you are looking for If you give it a forwarder it will cheque for the file name containing the content that you give it
 - Prints the lines matching a particular pattern
 - Also helps you find strings and patterns in a file
 - Usage → `grep -r "dynamic" /etc/`
@@ -204,11 +225,22 @@ Permissions are divided into blocks of 3, e.g. `-rw-r--r--` → read it as `-` `
 
 > 💡 Unsure about a tool? Use `man <command>` to check how to use it (full manual — `whatis` is just a one-liner). Press `q` to exit.
 
-### Piping
+### Piping `|`
 
 - We can also pass some data to a command and then perform operations on it
 - Example → `cat /etc/passwd | grep "Ujjwal"`
   - `cat` prints the file → the output is piped into `grep` → only the matching lines are shown
+
+
+
+A pipe takes the output of the left command and feeds it as input to the right command. The flow is `command → command`.
+
+- `ls -l | grep "txt"` shows only the `.txt` entries of a listing.
+- `ps aux | grep ssh` checks whether an `ssh` process is running.
+- `history | grep "nmap"` finds commands you ran earlier.
+- `ip a | grep "inet"` shows only your IP lines.
+- `cat /etc/passwd | grep "bash"` does the same as `grep "bash" /etc/passwd`, which is shorter and preferred when it's a single file.
+
 
 **Symbols to remember**
 
@@ -216,7 +248,7 @@ Permissions are divided into blocks of 3, e.g. `-rw-r--r--` → read it as `-` `
 - `>` → command → file
 - `>>` → command → file (append)
 
----
+
 
 ## Locate — Finding Files
 
@@ -224,3 +256,6 @@ Permissions are divided into blocks of 3, e.g. `-rw-r--r--` → read it as `-` `
 - Usage → `locate <filename>` → e.g. `locate test.txt`
 
 > 💡 `locate` searches a pre-built database, so brand-new files may not show up until you refresh it → `sudo updatedb`
+
+
+ to find the files contaning a particular pattern in name we can use `locate -all "ujjwal sharma"`
